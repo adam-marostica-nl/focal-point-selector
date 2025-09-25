@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Focal Point Selector</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 8px;
+    }
+    button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+    .image-container {
+      position: relative;
+      display: inline-block;
+      cursor: crosshair;
+      margin-top: 8px;
+    }
+    .image-container img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    .focal-marker {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: red;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      border: 2px solid white;
+    }
+    .coords {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #444;
+    }
+  </style>
+  <!-- Contentstack App SDK -->
+  <script src="https://unpkg.com/@contentstack/app-sdk@1.0.0/dist/contentstack.app.js"></script>
+</head>
+<body>
+  <button id="pickImageBtn">Select Image</button>
+  <div id="imageContainer" class="image-container" style="display:none;">
+    <img id="selectedImage" src="" alt="Selected Image" />
+    <div id="focalMarker" class="focal-marker" style="display:none;"></div>
+  </div>
+  <div id="coords" class="coords"></div>
+
+  <script>
+    let field;
+
+    // Initialize Contentstack App SDK
+    ContentstackApp.init().then((sdk) => {
+      field = sdk.location.CustomField;
+
+      const pickBtn = document.getElementById('pickImageBtn');
+      const imgContainer = document.getElementById('imageContainer');
+      const imgEl = document.getElementById('selectedImage');
+      const marker = document.getElementById('focalMarker');
+      const coords = document.getElementById('coords');
+
+      // Load existing focal point
+      const saved = field.getData();
+      if (saved && saved.x !== undefined && saved.y !== undefined) {
+        displayFocalPoint(saved);
+      }
+
+      // Asset picker
+      pickBtn.addEventListener('click', async () => {
+        const assets = await sdk.location.AssetSidebar.openAssetPicker();
+        if (assets && assets.length > 0) {
+          imgEl.src = assets[0].url;
+          imgContainer.style.display = 'inline-block';
+          marker.style.display = 'none';
+          coords.innerText = '';
+        }
+      });
+
+      // Click to set focal point
+      imgContainer.addEventListener('click', (e) => {
+        const rect = imgEl.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width).toFixed(3);
+        const y = ((e.clientY - rect.top) / rect.height).toFixed(3);
+        const point = { x: parseFloat(x), y: parseFloat(y) };
+
+        field.setData(point);
+        displayFocalPoint(point);
+      });
+
+      function displayFocalPoint(point) {
+        marker.style.display = 'block';
+        marker.style.left = (point.x * 100) + '%';
+        marker.style.top = (point.y * 100) + '%';
+        coords.innerText = `Focal point: ${point.x}, ${point.y}`;
+      }
+    });
+    // THE END
+  </script>
+</body>
+</html>
