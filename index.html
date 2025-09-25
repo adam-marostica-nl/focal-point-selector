@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Focal Point Selector</title>
+  <title>Focal Point Picker</title>
   <style>
     body {
       font-family: sans-serif;
@@ -42,12 +42,9 @@
       color: #444;
     }
   </style>
-  <!-- Contentstack App SDK -->
-  <script
-    src="https://unpkg.com/@contentstack/app-sdk@2.1.0/dist/index.js"
-    integrity="sha512-wlEBUkZA+vdcHXRTK69fZvK44c5Y8KeU/kw9OOShWNDjddtrIB8a1lfbLjH5nKWQqkWZ2L9VYEqr96P7qx3ZZg=="
-    crossorigin="anonymous"
-></script>
+
+  <!-- Official Contentstack App SDK CDN -->
+  <script src="https://cdn.contentstack.io/app-sdk/2.1.0/contentstack.app.js"></script>
 </head>
 <body>
   <button id="pickImageBtn">Select Image</button>
@@ -58,12 +55,9 @@
   <div id="coords" class="coords"></div>
 
   <script>
-    console.log('Contentstack App SDK exists:', typeof ContentstackApp);
-    let field;
-
-    // Initialize Contentstack App SDK
+    // Wait for the SDK to initialize
     ContentstackApp.init().then((sdk) => {
-      field = sdk.location.CustomField;
+      const field = sdk.location.CustomField;
 
       const pickBtn = document.getElementById('pickImageBtn');
       const imgContainer = document.getElementById('imageContainer');
@@ -77,14 +71,18 @@
         displayFocalPoint(saved);
       }
 
-      // Asset picker
+      // Asset Picker button
       pickBtn.addEventListener('click', async () => {
-        const assets = await sdk.location.AssetSidebar.openAssetPicker();
-        if (assets && assets.length > 0) {
-          imgEl.src = assets[0].url;
-          imgContainer.style.display = 'inline-block';
-          marker.style.display = 'none';
-          coords.innerText = '';
+        try {
+          const assets = await sdk.location.AssetSidebar.openAssetPicker();
+          if (assets && assets.length > 0) {
+            imgEl.src = assets[0].url;
+            imgContainer.style.display = 'inline-block';
+            marker.style.display = 'none';
+            coords.innerText = '';
+          }
+        } catch (err) {
+          console.error('Asset Picker error:', err);
         }
       });
 
@@ -105,8 +103,9 @@
         marker.style.top = (point.y * 100) + '%';
         coords.innerText = `Focal point: ${point.x}, ${point.y}`;
       }
+    }).catch(err => {
+      console.error('SDK initialization failed:', err);
     });
-    // THE END
   </script>
 </body>
 </html>
